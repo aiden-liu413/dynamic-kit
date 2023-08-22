@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.kxingyi</groupId>
+        <artifactId>dynamic</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <groupId>com.kxingyi</groupId>
+    <artifactId>dynamic-server</artifactId>
+    <version>1.0.0</version>
+    <name>dynamic-server</name>
+    <description>Demo project for Spring Boot</description>
+    <properties>
+        <project.build.name>dynamicServer</project.build.name>
+        <java.version>8</java.version>
+        <spring-cloud.version>2022.0.4</spring-cloud.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.kxingyi</groupId>
+            <artifactId>dynamic-common</artifactId>
+            <version>${dynamic.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>co.elastic.clients</groupId>
+            <artifactId>elasticsearch-java</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+            <version>${spring-boot-dependencies.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+
+    </dependencies>
+
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <profile.active>dev</profile.active>
+            </properties>
+        </profile>
+        <profile>
+            <id>test</id>
+            <properties>
+                <profile.active>test</profile.active>
+            </properties>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <properties>
+                <profile.active>prod</profile.active>
+            </properties>
+        </profile>
+    </profiles>
+
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <!--先排除所有的配置文件-->
+                <excludes>
+                    <exclude>bootstrap*.properties</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <!--引入所需要环境的配置文件-->
+                <filtering>true</filtering>
+                <includes>
+                    <include>bootstrap.properties</include>
+                    <include>bootstrap-${profile.active}.properties</include>
+                </includes>
+            </resource>
+        </resources>
+        <!--SpringBoot 单JAR 打包方式 -->
+        <!--        <plugins>-->
+        <!--            <plugin>-->
+        <!--                <groupId>org.springframework.boot</groupId>-->
+        <!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
+        <!--            </plugin>-->
+        <!--        </plugins>-->
+        <!--TAR.GZ打包方式 -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>com/**</include>
+                        <include>META-INF/**</include>
+                        <include>doc/**</include>
+                    </includes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.5</version>
+                <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptors>
+                        <descriptor>src/main/assembly/assembly.xml</descriptor>
+                    </descriptors>
+                    <finalName>dcimServer-${project.version}-${git.commit.time}-${git.commit.id.abbrev}</finalName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.github.swagger2markup</groupId>
+                <artifactId>swagger2markup-maven-plugin</artifactId>
+                <version>1.3.1</version>
+                <configuration>
+                    <swaggerInput>http://localhost:8088/v2/api-docs</swaggerInput><!---swagger-api-json路径 -->
+                    <outputDir>doc</outputDir><!---生成路径 -->
+                    <config>
+                        <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage><!--生成格式 -->
+                    </config>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>1.5.8</version>
+                <configuration>
+                    <!--asciidoc文件目录 -->
+                    <sourceDirectory>doc</sourceDirectory>
+                    <!---生成html的路径 -->
+                    <outputDirectory>doc/html</outputDirectory>
+                    <backend>html</backend>
+                    <sourceHighlighter>coderay</sourceHighlighter>
+                    <attributes>
+                        <!--导航栏在左 -->
+                        <toc>left</toc>
+                        <!--显示层级数 -->
+                        <toclevels>3</toclevels>
+                        <!--自动打数字序号 -->
+                        <sectnums>true</sectnums>
+                    </attributes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>2.2.4</version>
+                <executions>
+                    <execution>
+                        <id>get Git info</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- 使properties扩展到整个maven bulid 周期 Ref: https://github.com/ktoso/maven-git-commit-id-plugin/issues/280 -->
+                    <injectAllReactorProjects>true</injectAllReactorProjects>
+                    <dateFormat>yyyyMMddHHmmss</dateFormat>
+                    <verbose>true</verbose>
+                    <!-- 是否生 git.properties 属性文件 -->
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <!--<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename> -->
+                    <!--git描述配置,可选;由JGit提供实现; -->
+                    <gitDescribe>
+                        <!--是否生成描述属性 -->
+                        <skip>false</skip>
+                        <!--提交操作未发现tag时,仅打印提交操作ID, -->
+                        <always>false</always>
+                        <!--提交操作ID显式字符长度,最大值为:40;默认值:7; 0代表特殊意义;后面有解释; -->
+                        <abbrev>10</abbrev>
+                        <!--构建触发时,代码有修改时(即"dirty state"),添加指定后缀;默认值:""; -->
+                        <dirty>-dirty</dirty>
+                        <!--always print using the "tag-commits_from_tag-g_commit_id-maybe_dirty"
+                            format, even if "on" a tag. The distance will always be 0 if you're "on"
+                            the tag. -->
+                        <forceLongFormat>false</forceLongFormat>
+                    </gitDescribe>
+                </configuration>
+            </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-checkstyle-plugin</artifactId>-->
+            <!--                <version>${maven-checkstyle-plugin.version}</version>-->
+            <!--                <configuration>-->
+            <!--                    <configLocation>style/CodeCheckStyle.xml</configLocation>-->
+            <!--                    <includeTestSourceDirectory>true</includeTestSourceDirectory>-->
+            <!--                    <consoleOutput>true</consoleOutput>-->
+            <!--                    <failsOnError>true</failsOnError>-->
+            <!--                    <excludes>-->
+            <!--                        &lt;!&ndash;                        排除检查列表，逗号分割&ndash;&gt;-->
+            <!--                        dcim-bi-service-->
+            <!--                    </excludes>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>validate</id>-->
+            <!--                        <phase>validate</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>check</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
+        </plugins>
+    </build>
+
+</project>
